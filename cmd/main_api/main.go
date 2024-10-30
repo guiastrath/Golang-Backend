@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"golang-backend/internal/api/v1/handlers"
 	"net/http"
 )
 
@@ -10,10 +11,12 @@ const (
 )
 
 func main() {
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World!")
-	})
+
+	// Add all Handlers
+	handlers.NewRecognitionHandler().BuildHandlers(mux)
+	handlers.NewConfigsHandler().BuildHandlers(mux)
 
 	err := http.ListenAndServe(PORT, mux)
 	fmt.Println(err)
