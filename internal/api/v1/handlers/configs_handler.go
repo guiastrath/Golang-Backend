@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"golang-backend/pkg/httprest"
 	"net/http"
 )
 
 const (
-	configsBaseUrl = "/configs"
+// configsBaseUrl = "/configs"
 )
 
 type ConfigsHandler struct {
@@ -20,7 +19,7 @@ func NewConfigsHandler() *ConfigsHandler {
 }
 
 func (h *ConfigsHandler) BuildHandlers(mux *http.ServeMux) {
-	mux.HandleFunc(httprest.GET(configsBaseUrl+"/"), h.HelloWorld)
+	// mux.HandleFunc(httprest.GET(configsBaseUrl+"/"), h.HelloWorld)
 }
 
 func (h *ConfigsHandler) HelloWorld(w http.ResponseWriter, r *http.Request) {

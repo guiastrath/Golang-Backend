@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"fmt"
 	"golang-backend/internal/data/recognition"
-	"golang-backend/internal/middleware/auth"
 	"golang-backend/pkg/httprest"
 	"net/http"
 )
@@ -21,9 +21,11 @@ func NewRecognitionHandler() *RecognitionHandler {
 	}
 }
 
-func (h *RecognitionHandler) BuildHandlers(mux *http.ServeMux) {
-	mux.HandleFunc(httprest.GET(recognitionBaseUrl+"/hello-world"), h.HelloWorld)
-	mux.HandleFunc(httprest.GET(recognitionBaseUrl+"/recognize"), h.Recognize)
+func (h *RecognitionHandler) Handlers() []*httprest.Route {
+	return httprest.PrivateRoutes("/v1",
+		httprest.GET(recognitionBaseUrl+"/helloworld").To(h.HelloWorld),
+		httprest.POST(recognitionBaseUrl+"/recognize").To(h.Recognize),
+	)
 }
 
 func (h *RecognitionHandler) HelloWorld(w http.ResponseWriter, r *http.Request) {
@@ -31,21 +33,26 @@ func (h *RecognitionHandler) HelloWorld(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *RecognitionHandler) Recognize(w http.ResponseWriter, r *http.Request) {
-	apiKey, ok := r.Context().Value(auth.ApiKey).(string)
+	ctx := r.Context()
 
-	if !ok || apiKey != auth.Token {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	var p []byte
+	a, err := h.recognitionService.Recognize(ctx, r.Body)
+	r.Body.Read(p)
+	if err != nil {
+		http.Error(w, "Error", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println(p)
+	// apiKey, ok := r.Context().Value(auth.API_KEY).(string)
+
+	// if !ok || apiKey != auth.RecognitionToken {
+	// 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	// 	return
+	// }
 
 	// ctx := r.Context()
 
 	// recognition, err := h.recognitionService.Recognize(ctx, apiKey)
 
-	// if err != nil {
-	// 	http.Error(w, "Error", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	httprest.Response(w, http.StatusOK, "recognition")
+	httprest.Response(w, http.StatusOK, a)
 }

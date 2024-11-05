@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"golang-backend/internal/api/v1/handlers"
-	"net/http"
+	"golang-backend/internal/middleware/auth"
+	"golang-backend/pkg/httprest"
 )
 
 const (
@@ -11,14 +11,17 @@ const (
 )
 
 func main() {
+	configs := &httprest.WSConfig{
+		ServerPort: PORT,
+	}
 
-	mux := http.NewServeMux()
+	server := httprest.NewWebService(configs)
 
-	// Add all Handlers
-	handlers.NewRecognitionHandler().BuildHandlers(mux)
-	handlers.NewConfigsHandler().BuildHandlers(mux)
+	server.UseAuth(auth.NewAuthMiddleware).
+		AddHandlers(
+			handlers.NewRecognitionHandler(),
+			// handlers.NewConfigsHandler(),
+		)
 
-	err := http.ListenAndServe(PORT, mux)
-	fmt.Println(err)
-	// fmt.Println("Hello, World!")
+	server.ListenAndServe()
 }
