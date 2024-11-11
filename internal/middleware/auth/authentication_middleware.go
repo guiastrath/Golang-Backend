@@ -16,7 +16,8 @@ const (
 
 func NewAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		headerToken := r.Header.Get("apiKey")
+		headerToken := r.Header.Get("x-api-key")
+
 		if headerToken == "" {
 			httprest.Error(w, http.StatusUnauthorized, errors.New("token is missing"))
 			return

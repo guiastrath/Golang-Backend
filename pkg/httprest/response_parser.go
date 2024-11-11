@@ -15,8 +15,8 @@ var (
 )
 
 type ErrorResponse struct {
-	StatusCode int    `json:"code"`
-	Message    string `json:"message"`
+	StatusCode int
+	Message    string
 }
 
 func JSON(w http.ResponseWriter, statusCode int, jsonData []byte) {

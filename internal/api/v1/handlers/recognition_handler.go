@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"golang-backend/internal/data/recognition"
 	"golang-backend/pkg/httprest"
@@ -22,7 +24,7 @@ func NewRecognitionHandler() *RecognitionHandler {
 }
 
 func (h *RecognitionHandler) Handlers() []*httprest.Route {
-	return httprest.PrivateRoutes("/v1",
+	return httprest.PrivateRoutes("/api/v1",
 		httprest.GET(recognitionBaseUrl+"/helloworld").To(h.HelloWorld),
 		httprest.POST(recognitionBaseUrl+"/recognize").To(h.Recognize),
 	)
@@ -33,26 +35,33 @@ func (h *RecognitionHandler) HelloWorld(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *RecognitionHandler) Recognize(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 
-	var p []byte
-	a, err := h.recognitionService.Recognize(ctx, r.Body)
-	r.Body.Read(p)
+	if r.Body == nil {
+		http.Error(w, "No body.", http.StatusBadRequest)
+	}
+
+	params := r.URL.Query()
+
+	request := &recognition.RecognitionRequest{}
+	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, "Error", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error decoding JSON: %v", err), http.StatusBadRequest)
 		return
 	}
-	fmt.Println(p)
-	// apiKey, ok := r.Context().Value(auth.API_KEY).(string)
 
-	// if !ok || apiKey != auth.RecognitionToken {
-	// 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
-	// 	return
-	// }
+	fileData, err := base64.StdEncoding.DecodeString(request.File)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error decoding base64 data: %v", err), http.StatusBadRequest)
+		return
+	}
 
-	// ctx := r.Context()
+	ctx := r.Context()
 
-	// recognition, err := h.recognitionService.Recognize(ctx, apiKey)
+	res, err := h.recognitionService.Recognize(ctx, fileData, params)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	httprest.Response(w, http.StatusOK, a)
+	httprest.Response(w, http.StatusOK, res)
 }
