@@ -11,7 +11,7 @@ import (
 type Token string
 
 const (
-	API_KEY Token = "apiKey"
+	AUTH_DATA Token = "authData"
 )
 
 func NewAuthMiddleware(next http.Handler) http.Handler {
@@ -19,7 +19,7 @@ func NewAuthMiddleware(next http.Handler) http.Handler {
 		headerToken := r.Header.Get("x-api-key")
 
 		if headerToken == "" {
-			httprest.Error(w, http.StatusUnauthorized, errors.New("token is missing"))
+			httprest.Error(w, http.StatusBadRequest, errors.New("token is missing"))
 			return
 		}
 
@@ -28,7 +28,22 @@ func NewAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), API_KEY, headerToken)
+		deviceId := r.Header.Get("deviceId")
+
+		if deviceId == "" {
+			httprest.Error(w, http.StatusBadRequest, errors.New("deviceId is missing"))
+			return
+		}
+
+		if deviceId != common.DeviceId {
+			httprest.Error(w, http.StatusBadRequest, errors.New("invalid deviceId"))
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), AUTH_DATA, &AuthData{
+			ApiKey:   headerToken,
+			DeviceID: deviceId,
+		})
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)

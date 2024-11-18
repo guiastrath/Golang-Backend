@@ -1,11 +1,12 @@
 package recognition
 
 type RecognitionRequest struct {
-	File string `json:"file"`
+	File      string `json:"file"`
+	BarrierID string `json:"barrierId"`
 }
 
 type Box struct {
-	Probability float64 `json:"probability"`
+	Probability float32 `json:"probability"`
 	XMax        int     `json:"x_max"`
 	YMax        int     `json:"y_max"`
 	XMin        int     `json:"x_min"`
@@ -14,12 +15,14 @@ type Box struct {
 
 type Subject struct {
 	Subject    string  `json:"subject"`
-	Similarity float64 `json:"similarity"`
+	Similarity float32 `json:"similarity"`
+}
+
+type Result struct {
+	Box      Box       `json:"box"`
+	Subjects []Subject `json:"subjects"`
 }
 
 type RecognitionResponse struct {
-	Result []struct {
-		Box      Box       `json:"box"`
-		Subjects []Subject `json:"subjects"`
-	} `json:"result"`
+	Result []Result `json:"result"`
 }

@@ -4,7 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+
+	"golang-backend/internal/data/barrier"
 	"golang-backend/internal/data/recognition"
+	"golang-backend/internal/middleware/auth"
 	"golang-backend/pkg/httprest"
 	"net/http"
 )
@@ -15,11 +18,13 @@ const (
 
 type RecognitionHandler struct {
 	recognitionService recognition.RecognitionService
+	barrierService     barrier.BarrierService
 }
 
 func NewRecognitionHandler() *RecognitionHandler {
 	return &RecognitionHandler{
 		recognitionService: recognition.NewRecognitionService(),
+		barrierService:     barrier.NewRecognitionService(),
 	}
 }
 
@@ -35,6 +40,12 @@ func (h *RecognitionHandler) HelloWorld(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *RecognitionHandler) Recognize(w http.ResponseWriter, r *http.Request) {
+	sessionInfo := r.Context().Value(auth.AUTH_DATA).(*auth.AuthData)
+	if sessionInfo == nil {
+		fmt.Println("Unauthorized")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	if r.Body == nil {
 		http.Error(w, "No body.", http.StatusBadRequest)
@@ -55,13 +66,21 @@ func (h *RecognitionHandler) Recognize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
-
-	res, err := h.recognitionService.Recognize(ctx, fileData, params)
+	response, err := h.recognitionService.Recognize(sessionInfo, fileData, params)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	httprest.Response(w, http.StatusOK, res)
+	ok, err := h.barrierService.ControlBarrier(sessionInfo, response)
+	if !ok {
+		http.Error(w, fmt.Sprintf("barrier control failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	httprest.Response(w, http.StatusOK, response)
 }

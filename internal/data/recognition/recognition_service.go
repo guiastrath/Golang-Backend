@@ -2,7 +2,6 @@ package recognition
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"golang-backend/internal/middleware/auth"
@@ -14,7 +13,7 @@ import (
 )
 
 type RecognitionService interface {
-	Recognize(ctx context.Context, file []byte, params url.Values) (*RecognitionResponse, error)
+	Recognize(sessionInfo *auth.AuthData, file []byte, params url.Values) (*RecognitionResponse, error)
 }
 
 type recognitionService struct {
@@ -29,7 +28,7 @@ func NewRecognitionService() RecognitionService {
 	}
 }
 
-func (s *recognitionService) Recognize(ctx context.Context, file []byte, params url.Values) (*RecognitionResponse, error) {
+func (s *recognitionService) Recognize(sessionInfo *auth.AuthData, file []byte, params url.Values) (*RecognitionResponse, error) {
 
 	// Building Recognition Body with file
 	body, contentType, err := s.buildRecognitionBody(file)
@@ -59,7 +58,7 @@ func (s *recognitionService) Recognize(ctx context.Context, file []byte, params 
 	}
 
 	recognitionRequest.Header.Set("Content-Type", *contentType)
-	recognitionRequest.Header.Set("x-api-key", ctx.Value(auth.API_KEY).(string))
+	recognitionRequest.Header.Set("x-api-key", sessionInfo.ApiKey)
 
 	response, err := http.DefaultClient.Do(recognitionRequest)
 	if err != nil {
