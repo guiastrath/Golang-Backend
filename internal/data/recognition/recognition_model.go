@@ -26,3 +26,8 @@ type Result struct {
 type RecognitionResponse struct {
 	Result []Result `json:"result"`
 }
+
+type RecognitionDisplay struct {
+	Box     Box     `json:"box"`
+	Subject Subject `json:"subject"`
+}

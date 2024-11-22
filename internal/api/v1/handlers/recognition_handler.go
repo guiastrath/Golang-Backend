@@ -72,15 +72,22 @@ func (h *RecognitionHandler) Recognize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := h.barrierService.ControlBarrier(sessionInfo, response)
-	if !ok {
+	validatedFace, err := h.barrierService.ControlBarrier(sessionInfo, response)
+
+	// Find way to return unrecognized face as StatusOK response
+
+	if err != nil {
+		fmt.Println(err)
 		http.Error(w, fmt.Sprintf("barrier control failed: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	if err != nil {
-		fmt.Println(err)
+	if validatedFace == nil {
+		fmt.Println("access denied")
+		httprest.Response(w, http.StatusOK, "access denied")
+		return
 	}
 
-	httprest.Response(w, http.StatusOK, response)
+	fmt.Printf("%+v \n", response)
+	httprest.Response(w, http.StatusOK, validatedFace)
 }

@@ -12,7 +12,7 @@ import (
 
 type BarrierService interface {
 	ConfigureBarrier(deviceId string, pulse string, pulseWidth int) error
-	ControlBarrier(sessionInfo *auth.AuthData, result *recognition.RecognitionResponse) (bool, error)
+	ControlBarrier(sessionInfo *auth.AuthData, result *recognition.RecognitionResponse) (*recognition.RecognitionDisplay, error)
 }
 
 type barrierService struct {
@@ -26,11 +26,12 @@ func (s *barrierService) ConfigureBarrier(deviceId string, pulse string, pulseWi
 	return nil
 }
 
-func (s *barrierService) ControlBarrier(sessionInfo *auth.AuthData, result *recognition.RecognitionResponse) (bool, error) {
+func (s *barrierService) ControlBarrier(sessionInfo *auth.AuthData, result *recognition.RecognitionResponse) (*recognition.RecognitionDisplay, error) {
 
 	// Validating Recognition
-	if !s.validateSimilarity(result) {
-		return true, fmt.Errorf("no valid recognition")
+	validatedFace := s.validateSimilarity(result)
+	if validatedFace == nil {
+		return nil, nil
 	}
 
 	// Building request struct
@@ -45,7 +46,7 @@ func (s *barrierService) ControlBarrier(sessionInfo *auth.AuthData, result *reco
 	jsonData, err := json.Marshal(controlBody)
 	if err != nil {
 		fmt.Println("Error on creating barrierControl body - JSON Marshal", err)
-		return false, err
+		return nil, err
 	}
 
 	body := bytes.NewBuffer(jsonData)
@@ -54,7 +55,7 @@ func (s *barrierService) ControlBarrier(sessionInfo *auth.AuthData, result *reco
 	controlRequest, err := http.NewRequest(http.MethodPost, common.BarrierControlUrl, body)
 	if err != nil {
 		fmt.Println("Error on creating barrierControl request", err)
-		return false, err
+		return nil, err
 	}
 
 	controlRequest.Header.Set("Content-Type", common.JSON)
@@ -64,22 +65,24 @@ func (s *barrierService) ControlBarrier(sessionInfo *auth.AuthData, result *reco
 		response, err := http.DefaultClient.Do(controlRequest)
 		if err != nil {
 			fmt.Println("Error on executing barrierControl request", err)
-			return false, err
+			return nil, err
 		}
 		defer response.Body.Close()
 	}
 
-	return true, nil
+	return validatedFace, nil
 }
 
-func (h *barrierService) validateSimilarity(result *recognition.RecognitionResponse) bool {
+func (h *barrierService) validateSimilarity(result *recognition.RecognitionResponse) *recognition.RecognitionDisplay {
 	for _, res := range result.Result {
 		for _, subject := range res.Subjects {
-			fmt.Printf("%s recognized with %.2f%% similarity\n", subject.Subject, subject.Similarity*100)
 			if subject.Similarity >= common.MinimumSimilarity {
-				return true
+				return &recognition.RecognitionDisplay{
+					Box:     res.Box,
+					Subject: subject,
+				}
 			}
 		}
 	}
-	return false
+	return nil
 }
