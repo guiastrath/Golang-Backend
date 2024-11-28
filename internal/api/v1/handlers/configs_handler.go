@@ -1,27 +1,31 @@
 package handlers
 
 import (
+	"golang-backend/internal/data/barrier"
+	"golang-backend/pkg/httprest"
 	"net/http"
 )
 
 const (
-// configsBaseUrl = "/configs"
+	configsBaseUrl = "/configs"
 )
 
 type ConfigsHandler struct {
-	// configsService configs.ConfigsService
+	barrierService barrier.BarrierService
 }
 
 func NewConfigsHandler() *ConfigsHandler {
 	return &ConfigsHandler{
-		// configsService: configs.NewConfigsService(),
+		barrierService: barrier.NewBarrierService(),
 	}
 }
 
-func (h *ConfigsHandler) BuildHandlers(mux *http.ServeMux) {
-	// mux.HandleFunc(httprest.GET(configsBaseUrl+"/"), h.HelloWorld)
+func (h *ConfigsHandler) Handlers() []*httprest.Route {
+	return httprest.PrivateRoutes("/api/v1",
+		httprest.GET(configsBaseUrl+"/barrier/{deviceId}").To(h.ConfigureBarrier),
+	)
 }
 
-func (h *ConfigsHandler) HelloWorld(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello, World!"))
+func (h *ConfigsHandler) ConfigureBarrier(w http.ResponseWriter, r *http.Request) {
+	// h.barrierService.ConfigureBarrier(deviceId, pulse, pulseWidth)
 }

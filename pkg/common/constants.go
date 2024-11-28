@@ -19,7 +19,7 @@ const (
 	TestBarrierPresent    bool   = false
 
 	DeviceId          string  = "b90d59f0-5fa0-4222-a8b5-4258d220caeb"
-	MinimumSimilarity float32 = 0.85
+	MinimumSimilarity float32 = 0.90
 )
 
 // Barrier Controls

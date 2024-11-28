@@ -18,7 +18,7 @@ type BarrierService interface {
 type barrierService struct {
 }
 
-func NewRecognitionService() BarrierService {
+func NewBarrierService() BarrierService {
 	return &barrierService{}
 }
 

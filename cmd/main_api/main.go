@@ -20,7 +20,7 @@ func main() {
 	server.UseAuth(auth.NewAuthMiddleware).
 		AddHandlers(
 			handlers.NewRecognitionHandler(),
-			// handlers.NewConfigsHandler(),
+			handlers.NewConfigsHandler(),
 		)
 
 	server.ListenAndServe()
