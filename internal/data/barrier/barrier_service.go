@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"golang-backend/internal/data/configs"
 	"golang-backend/internal/data/recognition"
 	"golang-backend/internal/middleware/auth"
 	"golang-backend/pkg/common"
@@ -11,7 +12,7 @@ import (
 )
 
 type BarrierService interface {
-	ConfigureBarrier(deviceId string, pulse string, pulseWidth int) error
+	ConfigureBarrier(sessionInfo *auth.AuthData, pulseState string, pulseWidth int) error
 	ControlBarrier(sessionInfo *auth.AuthData, result *recognition.RecognitionResponse) (*recognition.RecognitionDisplay, error)
 }
 
@@ -22,7 +23,44 @@ func NewBarrierService() BarrierService {
 	return &barrierService{}
 }
 
-func (s *barrierService) ConfigureBarrier(deviceId string, pulse string, pulseWidth int) error {
+func (s *barrierService) ConfigureBarrier(sessionInfo *auth.AuthData, pulseState string, pulseWidth int) error {
+	// Building request struct
+	configBody := configs.BarrierConfig{
+		DeviceID: sessionInfo.DeviceID,
+		Data: configs.PulseConfigData{
+			Pulse:      common.ON,
+			PulseWidth: pulseWidth,
+		},
+	}
+
+	// Building request Body
+	jsonData, err := json.Marshal(configBody)
+	if err != nil {
+		fmt.Println("Error on creating barrierConfig body - JSON Marshal", err)
+		return err
+	}
+
+	body := bytes.NewBuffer(jsonData)
+
+	// Building request
+	configRequest, err := http.NewRequest(http.MethodPost, common.BarrierPulseConfigUrl, body)
+	if err != nil {
+		fmt.Println("Error on creating barrierConfig request", err)
+		return err
+	}
+
+	configRequest.Header.Set("Content-Type", common.JSON)
+
+	// Executing request
+	if common.TestBarrierPresent {
+		response, err := http.DefaultClient.Do(configRequest)
+		if err != nil {
+			fmt.Println("Error on executing barrierConfig request", err)
+			return err
+		}
+		defer response.Body.Close()
+	}
+
 	return nil
 }
 
